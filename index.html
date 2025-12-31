@@ -20,8 +20,18 @@
             box-shadow: 0 15px 30px rgba(0,0,0,0.15); 
             width: 100%; max-width: 400px; 
             border: 5px solid var(--secondary-color); text-align: center;
-            margin-bottom: 20px;
+            margin-bottom: 20px; position: relative;
         }
+        /* 靜音按鈕樣式 */
+        .mute-btn {
+            position: absolute; top: 15px; right: 15px;
+            background: rgba(255,255,255,0.3); border: none;
+            border-radius: 50%; width: 40px; height: 40px;
+            cursor: pointer; font-size: 1.2rem; display: flex;
+            align-items: center; justify-content: center; transition: 0.3s;
+        }
+        .mute-btn:hover { background: rgba(255,255,255,0.5); }
+
         h2 { color: white; margin-top: 0; text-shadow: 2px 2px 4px rgba(0,0,0,0.2); }
         .result-box { 
             margin: 20px 0; padding: 20px; 
@@ -33,21 +43,20 @@
             font-size: 2rem; font-weight: bold; color: #86C166; 
             min-height: 2.5rem; display: flex; align-items: center; justify-content: center;
         }
-        button { 
+        button#btn { 
             background: var(--primary-color); color: white; border: none; 
             padding: 15px 40px; font-size: 1.2rem; border-radius: 50px; 
             cursor: pointer; transition: 0.3s; width: 100%;
             box-shadow: 0 5px 15px rgba(232, 122, 144, 0.4);
         }
-        button:hover { background: #d63031; transform: translateY(-2px); }
-        button:disabled { background: #ccc; cursor: not-allowed; }
+        button#btn:hover { background: #d63031; transform: translateY(-2px); }
+        button#btn:disabled { background: #ccc; cursor: not-allowed; }
 
         .history-area {
             width: 100%; max-width: 400px;
             background: rgba(255, 255, 255, 0.7);
             border-radius: 15px; padding: 15px;
-            margin-bottom: 20px; box-sizing: border-box;
-            display: none;
+            margin-bottom: 20px; box-sizing: border-box; display: none;
         }
         .history-title { font-weight: bold; color: #555; font-size: 0.9rem; border-bottom: 1px solid #E87A90; padding-bottom: 5px; margin-bottom: 10px; }
         .history-item { font-size: 0.85rem; color: #444; padding: 6px 0; border-bottom: 1px dashed #ddd; display: flex; justify-content: space-between; }
@@ -61,8 +70,7 @@
         textarea {
             width: 100%; height: 120px; border: 1px solid #ddd;
             border-radius: 8px; padding: 10px; font-size: 0.9rem;
-            resize: vertical; box-sizing: border-box;
-            font-family: inherit; line-height: 1.5;
+            resize: vertical; box-sizing: border-box; font-family: inherit;
         }
         @keyframes bounce {
             0%, 100% { transform: scale(1); }
@@ -74,10 +82,11 @@
 <body>
 
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
-
 <audio id="winSound" src="https://assets.mixkit.co/active_storage/sfx/2018/2018-preview.mp3" preload="auto"></audio>
 
 <div class="card">
+    <button class="mute-btn" id="muteBtn" onclick="toggleMute()">🔊</button>
+    
     <h2>🥤 工作壓力減緩裝置</h2>
     <div class="result-box">
         <div id="shopDisplay" class="shop-name">準備好喝些什麼了嗎？</div>
@@ -103,7 +112,14 @@
 
 <script>
     let isSpinning = false;
+    let isMuted = false;
     let historyRecords = [];
+
+    function toggleMute() {
+        isMuted = !isMuted;
+        const btn = document.getElementById('muteBtn');
+        btn.innerText = isMuted ? "🔇" : "🔊";
+    }
 
     function getMenuFromInput() {
         const text = document.getElementById('menuInput').value.trim();
@@ -127,21 +143,16 @@
         if (shops.length === 0) { alert("給我打正確的格式阿人類！"); return; }
 
         isSpinning = true;
-        const btn = document.getElementById('btn');
-        const shopDisplay = document.getElementById('shopDisplay');
-        const drinkDisplay = document.getElementById('drinkDisplay');
-        
-        btn.disabled = true;
-        drinkDisplay.classList.remove('animate-win');
+        document.getElementById('btn').disabled = true;
+        document.getElementById('drinkDisplay').classList.remove('animate-win');
 
         let count = 0;
         const totalSpins = 25; 
-
         const timer = setInterval(() => {
             const tempShop = shops[Math.floor(Math.random() * shops.length)];
             const tempDrink = menu[tempShop][Math.floor(Math.random() * menu[tempShop].length)];
-            shopDisplay.innerText = "🔍 為您安排中：" + tempShop;
-            drinkDisplay.innerText = tempDrink;
+            document.getElementById('shopDisplay').innerText = "🔍 為您安排中：" + tempShop;
+            document.getElementById('drinkDisplay').innerText = tempDrink;
             count++;
             if (count >= totalSpins) {
                 clearInterval(timer);
@@ -159,25 +170,17 @@
         document.getElementById('drinkDisplay').innerText = finalDrink;
         document.getElementById('drinkDisplay').classList.add('animate-win');
 
-        // 噴彩帶 (放在最前面確保優先執行)
-        if (typeof confetti === 'function') {
-            confetti({
-                particleCount: 150,
-                spread: 70,
-                origin: { y: 0.6 }
-            });
-        }
+        // 彩帶
+        confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
 
-        // 播放音樂
-        const audio = document.getElementById('winSound');
-        if (audio) {
+        // 判斷是否播放音樂
+        if (!isMuted) {
+            const audio = document.getElementById('winSound');
             audio.currentTime = 0;
-            audio.play().catch(e => console.log("音樂播放被阻擋")); 
+            audio.play().catch(() => {});
         }
 
-        // 更新歷史紀錄
         updateHistory(finalShop, finalDrink);
-
         document.getElementById('btn').disabled = false;
         isSpinning = false;
     }
