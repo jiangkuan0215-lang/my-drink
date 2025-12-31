@@ -58,15 +58,12 @@
             background: white; padding: 20px; border-radius: 15px;
             box-shadow: 0 4px 10px rgba(0,0,0,0.05); text-align: left;
         }
-        .config-area h3 { margin-top: 0; font-size: 1.1rem; color: #555; }
         textarea {
             width: 100%; height: 120px; border: 1px solid #ddd;
             border-radius: 8px; padding: 10px; font-size: 0.9rem;
             resize: vertical; box-sizing: border-box;
             font-family: inherit; line-height: 1.5;
         }
-        .tip { font-size: 0.8rem; color: #999; margin-top: 5px; }
-
         @keyframes bounce {
             0%, 100% { transform: scale(1); }
             50% { transform: scale(1.1); color: #D0104C; }
@@ -77,6 +74,7 @@
 <body>
 
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+
 <audio id="winSound" src="https://assets.mixkit.co/active_storage/sfx/2018/2018-preview.mp3" preload="auto"></audio>
 
 <div class="card">
@@ -161,15 +159,23 @@
         document.getElementById('drinkDisplay').innerText = finalDrink;
         document.getElementById('drinkDisplay').classList.add('animate-win');
 
-        // 1. 播放音樂
+        // 噴彩帶 (放在最前面確保優先執行)
+        if (typeof confetti === 'function') {
+            confetti({
+                particleCount: 150,
+                spread: 70,
+                origin: { y: 0.6 }
+            });
+        }
+
+        // 播放音樂
         const audio = document.getElementById('winSound');
-        audio.currentTime = 0; // 從頭播放
-        audio.play();
+        if (audio) {
+            audio.currentTime = 0;
+            audio.play().catch(e => console.log("音樂播放被阻擋")); 
+        }
 
-        // 2. 噴彩帶
-        confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
-
-        // 3. 更新紀錄
+        // 更新歷史紀錄
         updateHistory(finalShop, finalDrink);
 
         document.getElementById('btn').disabled = false;
