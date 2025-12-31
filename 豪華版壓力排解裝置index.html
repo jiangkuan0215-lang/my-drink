@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>豪華版壓力排解裝置</title>
+    <style>
+        :root {
+            --primary-color: #E87A90;
+            --secondary-color: #D0104C;
+            --bg-color: #fff5f5;
+        }
+        body { 
+            font-family: 'Microsoft JhengHei', sans-serif; 
+            background-color: var(--bg-color); 
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px;
+            margin: 0;
+        }
+        .card { 
+            background: #7B90D2; border-radius: 20px; padding: 30px; 
+            box-shadow: 0 15px 30px rgba(0,0,0,0.15); 
+            width: 100%; max-width: 400px; 
+            border: 5px solid var(--secondary-color);
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        h2 { color: white; margin-top: 0; text-shadow: 2px 2px 4px rgba(0,0,0,0.2); }
+        .result-box { 
+            margin: 20px 0; padding: 20px; 
+            background: #FCFAF2; border-radius: 15px; 
+            min-height: 100px; border: 2px solid #eee;
+        }
+        .shop-name { font-size: 1.1rem; color: #666; margin-bottom: 8px; }
+        .drink-name { 
+            font-size: 2rem; font-weight: bold; color: #86C166; 
+            min-height: 2.5rem; display: flex; align-items: center; justify-content: center;
+        }
+        button { 
+            background: var(--primary-color); color: white; border: none; 
+            padding: 15px 40px; font-size: 1.2rem; border-radius: 50px; 
+            cursor: pointer; transition: 0.3s; width: 100%;
+            box-shadow: 0 5px 15px rgba(232, 122, 144, 0.4);
+        }
+        button:hover { background: #d63031; transform: translateY(-2px); }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+
+        /* 自訂清單區域 */
+        .config-area {
+            width: 100%; max-width: 400px;
+            background: white; padding: 20px; border-radius: 15px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            text-align: left;
+        }
+        .config-area h3 { margin-top: 0; font-size: 1.1rem; color: #555; }
+        textarea {
+            width: 100%; height: 150px; border: 1px solid #ddd;
+            border-radius: 8px; padding: 10px; font-size: 0.9rem;
+            resize: vertical; box-sizing: border-box;
+            font-family: inherit; line-height: 1.5;
+        }
+        .tip { font-size: 0.8rem; color: #999; margin-top: 5px; }
+
+        @keyframes bounce {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); color: #D0104C; }
+        }
+        .animate-win { animation: bounce 0.5s ease; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>🥤 工作壓力減緩裝置</h2>
+    <div class="result-box">
+        <div id="shopDisplay" class="shop-name">準備好喝些什麼了嗎？</div>
+        <div id="drinkDisplay" class="drink-name">---</div>
+    </div>
+    <button id="btn" onclick="startSpin()">LINK STAR！</button>
+</div>
+
+<div class="config-area">
+    <h3>⚙️ 客製化您的餐點</h3>
+    <textarea id="menuInput">
+50嵐:小珍珠奶茶,波霸紅,四季春,8冰綠,冰淇淋紅茶,麵茶紅茶,阿華田,椰果奶綠
+迷客夏:大甲芋頭鮮奶,決明大麥,珍珠紅茶拿鐵,青檸香茶,靜岡焙焙鮮奶,娜杯紅茶拿鐵,法芙娜可可鮮奶
+可不可:熟成紅茶,胭脂紅茶,春芽綠茶,白玉歐蕾,青檸綠茶,輕纖榖奈茶,胭脂多多
+麻古茶坊:楊枝甘露,芝芝莓莓,高山金萱,柳橙果粒茶
+龜記:三十三茶王,紅柚翡翠,蘋果紅宣,蜜桃烏龍,阿源楊桃紅茶,龜記濃乳茶,極品濃乳茶,雷夢蘆薈蜜</textarea>
+    <div class="tip">格式範例：店家名稱:飲料A,飲料B (一行一家店)</div>
+</div>
+
+<script>
+    let isSpinning = false;
+
+    // 解析文字框內的內容轉為 JSON 格式
+    function getMenuFromInput() {
+        const text = document.getElementById('menuInput').value.trim();
+        const lines = text.split('\n');
+        const customMenu = {};
+
+        lines.forEach(line => {
+            const parts = line.split(':');
+            if (parts.length === 2) {
+                const shop = parts[0].trim();
+                const drinks = parts[1].split(',').map(d => d.trim()).filter(d => d !== "");
+                if (shop && drinks.length > 0) {
+                    customMenu[shop] = drinks;
+                }
+            }
+        });
+        return customMenu;
+    }
+
+    function startSpin() {
+        if (isSpinning) return;
+        
+        const menu = getMenuFromInput();
+        const shops = Object.keys(menu);
+
+        if (shops.length === 0) {
+            alert("給我打正確的格式阿人類！");
+            return;
+        }
+
+        isSpinning = true;
+        const btn = document.getElementById('btn');
+        const shopDisplay = document.getElementById('shopDisplay');
+        const drinkDisplay = document.getElementById('drinkDisplay');
+        
+        btn.disabled = true;
+        drinkDisplay.classList.remove('animate-win');
+
+        let count = 0;
+        const totalSpins = 25; 
+
+        const timer = setInterval(() => {
+            const tempShop = shops[Math.floor(Math.random() * shops.length)];
+            const tempDrinks = menu[tempShop];
+            const tempDrink = tempDrinks[Math.floor(Math.random() * tempDrinks.length)];
+
+            shopDisplay.innerText = "🔍 為您安排中：" + tempShop;
+            drinkDisplay.innerText = tempDrink;
+
+            count++;
+
+            if (count >= totalSpins) {
+                clearInterval(timer);
+                finishSpin(menu);
+            }
+        }, 60);
+    }
+
+    function finishSpin(menu) {
+        const shops = Object.keys(menu);
+        const finalShop = shops[Math.floor(Math.random() * shops.length)];
+        const finalDrink = menu[finalShop][Math.floor(Math.random() * menu[finalShop].length)];
+
+        const shopDisplay = document.getElementById('shopDisplay');
+        const drinkDisplay = document.getElementById('drinkDisplay');
+        const btn = document.getElementById('btn');
+
+        shopDisplay.innerText = "📍 就決定是你了！出來吧：" + finalShop;
+        drinkDisplay.innerText = finalDrink;
+        drinkDisplay.classList.add('animate-win');
+
+        btn.disabled = false;
+        isSpinning = false;
+    }
+</script>
+
+</body>
+</html>
