@@ -12,19 +12,15 @@
         body { 
             font-family: 'Microsoft JhengHei', sans-serif; 
             background-color: var(--bg-color); 
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 40px 20px;
-            margin: 0;
+            display: flex; flex-direction: column; align-items: center;
+            padding: 40px 20px; margin: 0;
         }
         .card { 
             background: #7B90D2; border-radius: 20px; padding: 30px; 
             box-shadow: 0 15px 30px rgba(0,0,0,0.15); 
             width: 100%; max-width: 400px; 
-            border: 5px solid var(--secondary-color);
-            text-align: center;
-            margin-bottom: 30px;
+            border: 5px solid var(--secondary-color); text-align: center;
+            margin-bottom: 20px;
         }
         h2 { color: white; margin-top: 0; text-shadow: 2px 2px 4px rgba(0,0,0,0.2); }
         .result-box { 
@@ -46,16 +42,25 @@
         button:hover { background: #d63031; transform: translateY(-2px); }
         button:disabled { background: #ccc; cursor: not-allowed; }
 
-        /* 自訂清單區域 */
+        .history-area {
+            width: 100%; max-width: 400px;
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 15px; padding: 15px;
+            margin-bottom: 20px; box-sizing: border-box;
+            display: none;
+        }
+        .history-title { font-weight: bold; color: #555; font-size: 0.9rem; border-bottom: 1px solid #E87A90; padding-bottom: 5px; margin-bottom: 10px; }
+        .history-item { font-size: 0.85rem; color: #444; padding: 6px 0; border-bottom: 1px dashed #ddd; display: flex; justify-content: space-between; }
+        .history-time { color: #999; font-size: 0.75rem; }
+
         .config-area {
             width: 100%; max-width: 400px;
             background: white; padding: 20px; border-radius: 15px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-            text-align: left;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05); text-align: left;
         }
         .config-area h3 { margin-top: 0; font-size: 1.1rem; color: #555; }
         textarea {
-            width: 100%; height: 150px; border: 1px solid #ddd;
+            width: 100%; height: 120px; border: 1px solid #ddd;
             border-radius: 8px; padding: 10px; font-size: 0.9rem;
             resize: vertical; box-sizing: border-box;
             font-family: inherit; line-height: 1.5;
@@ -71,6 +76,9 @@
 </head>
 <body>
 
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+<audio id="winSound" src="https://assets.mixkit.co/active_storage/sfx/2018/2018-preview.mp3" preload="auto"></audio>
+
 <div class="card">
     <h2>🥤 工作壓力減緩裝置</h2>
     <div class="result-box">
@@ -78,6 +86,11 @@
         <div id="drinkDisplay" class="drink-name">---</div>
     </div>
     <button id="btn" onclick="startSpin()">LINK STAR！</button>
+</div>
+
+<div class="history-area" id="historyArea">
+    <div class="history-title">📜 最近安排紀錄</div>
+    <div id="historyList"></div>
 </div>
 
 <div class="config-area">
@@ -88,26 +101,22 @@
 可不可:熟成紅茶,胭脂紅茶,春芽綠茶,白玉歐蕾,青檸綠茶,輕纖榖奈茶,胭脂多多
 麻古茶坊:楊枝甘露,芝芝莓莓,高山金萱,柳橙果粒茶
 龜記:三十三茶王,紅柚翡翠,蘋果紅宣,蜜桃烏龍,阿源楊桃紅茶,龜記濃乳茶,極品濃乳茶,雷夢蘆薈蜜</textarea>
-    <div class="tip">格式範例：店家名稱:飲料A,飲料B (一行一家店)</div>
 </div>
 
 <script>
     let isSpinning = false;
+    let historyRecords = [];
 
-    // 解析文字框內的內容轉為 JSON 格式
     function getMenuFromInput() {
         const text = document.getElementById('menuInput').value.trim();
         const lines = text.split('\n');
         const customMenu = {};
-
         lines.forEach(line => {
             const parts = line.split(':');
             if (parts.length === 2) {
                 const shop = parts[0].trim();
                 const drinks = parts[1].split(',').map(d => d.trim()).filter(d => d !== "");
-                if (shop && drinks.length > 0) {
-                    customMenu[shop] = drinks;
-                }
+                if (shop && drinks.length > 0) customMenu[shop] = drinks;
             }
         });
         return customMenu;
@@ -115,14 +124,9 @@
 
     function startSpin() {
         if (isSpinning) return;
-        
         const menu = getMenuFromInput();
         const shops = Object.keys(menu);
-
-        if (shops.length === 0) {
-            alert("給我打正確的格式阿人類！");
-            return;
-        }
+        if (shops.length === 0) { alert("給我打正確的格式阿人類！"); return; }
 
         isSpinning = true;
         const btn = document.getElementById('btn');
@@ -137,14 +141,10 @@
 
         const timer = setInterval(() => {
             const tempShop = shops[Math.floor(Math.random() * shops.length)];
-            const tempDrinks = menu[tempShop];
-            const tempDrink = tempDrinks[Math.floor(Math.random() * tempDrinks.length)];
-
+            const tempDrink = menu[tempShop][Math.floor(Math.random() * menu[tempShop].length)];
             shopDisplay.innerText = "🔍 為您安排中：" + tempShop;
             drinkDisplay.innerText = tempDrink;
-
             count++;
-
             if (count >= totalSpins) {
                 clearInterval(timer);
                 finishSpin(menu);
@@ -157,16 +157,39 @@
         const finalShop = shops[Math.floor(Math.random() * shops.length)];
         const finalDrink = menu[finalShop][Math.floor(Math.random() * menu[finalShop].length)];
 
-        const shopDisplay = document.getElementById('shopDisplay');
-        const drinkDisplay = document.getElementById('drinkDisplay');
-        const btn = document.getElementById('btn');
+        document.getElementById('shopDisplay').innerText = "📍 就決定是你了！出來吧：" + finalShop;
+        document.getElementById('drinkDisplay').innerText = finalDrink;
+        document.getElementById('drinkDisplay').classList.add('animate-win');
 
-        shopDisplay.innerText = "📍 就決定是你了！出來吧：" + finalShop;
-        drinkDisplay.innerText = finalDrink;
-        drinkDisplay.classList.add('animate-win');
+        // 1. 播放音樂
+        const audio = document.getElementById('winSound');
+        audio.currentTime = 0; // 從頭播放
+        audio.play();
 
-        btn.disabled = false;
+        // 2. 噴彩帶
+        confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+
+        // 3. 更新紀錄
+        updateHistory(finalShop, finalDrink);
+
+        document.getElementById('btn').disabled = false;
         isSpinning = false;
+    }
+
+    function updateHistory(shop, drink) {
+        const now = new Date();
+        const time = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
+        historyRecords.unshift({ shop, drink, time });
+        if (historyRecords.length > 5) historyRecords.pop();
+        const historyArea = document.getElementById('historyArea');
+        const historyList = document.getElementById('historyList');
+        historyArea.style.display = 'block';
+        historyList.innerHTML = historyRecords.map(item => `
+            <div class="history-item">
+                <span><strong>${item.shop}</strong> - ${item.drink}</span>
+                <span class="history-time">${item.time}</span>
+            </div>
+        `).join('');
     }
 </script>
 
